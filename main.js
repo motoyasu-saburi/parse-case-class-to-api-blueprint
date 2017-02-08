@@ -20,7 +20,8 @@ function parseCassClassToApiBlueprint() {
   var result = AddOptionalProperty(properties);
   var processingObj = removeStringOfOptional(result);
   var replacedSeqToArray = replaceSeqToArray(processingObj);
-  var result = writeResultCaseClass(className, replacedSeqToArray);
+  var parsedBaseType = parseApiBlueprintBaseType(replacedSeqToArray);
+  var result = writeResultCaseClass(className, parsedBaseType);
   var outputTarget = document.querySelector("#result");
   outputTarget.value = result;
 }
@@ -130,4 +131,22 @@ function addPlaceholder() {
   placeholderStr += ")\n";
   var inputTextArea = document.querySelector('#inputArea');
   inputTextArea.setAttribute("placeholder", placeholderStr);
+}
+
+function replaceBaseTypeForApiBlueprint (typeStr) {
+  var numberReg = /[(Int)|()]/
+}
+
+function parseApiBlueprintBaseType(prop) {
+  console.log(prop);
+  return prop.map(function(p){
+    var numberTypeReg = /(Int)|(Long)/
+    var stringTypeReg = /(String)/
+    var booleanTypeReg = /Boolean/
+    console.log(p["propertyName"]);
+    p["classType"] = p["classType"].replace(numberTypeReg, "number");
+    p["classType"] = p["classType"].replace(stringTypeReg, "string");
+    p["classType"] = p["classType"].replace(booleanTypeReg, "boolean");
+    return p;
+  });
 }
