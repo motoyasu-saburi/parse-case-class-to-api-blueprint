@@ -1,22 +1,22 @@
 // TODO Optionalが中に入ってるパターンはパースできないです。
-// TODO String, Int, Longなどを Apiblueprintの適切な形に変換したい（ex. string, number, boolean）
+// TODO デフォルト値の設定もできるようにしたい
 window.onload = function(){
-  bindStartButton();
-  addPlaceholder();
+  init();
 }
 
-function bindStartButton() {
+function init() {
+  addPlaceholder();
   var parserButton = document.querySelector("#parserButton");
   parserButton.addEventListener('click', function(){parseCassClassToApiBlueprint()}, false);
 }
 
 function parseCassClassToApiBlueprint() {
   var inputValue = document.querySelector('#inputArea').value;
-  var heredoc = inputValue.replace(/^\/\*/, "").replace(/\*\/$/, "");
-  var minimalizedStr = minimalize(heredoc)
-  var className = getClassName(minimalizedStr);
-  var propertiesStr = splitProperty(minimalizedStr);
-  var properties = parsepropertiestring(propertiesStr);
+  var minimalizedCaseClass = minimalize(inputValue);
+  var removedComment = minimalizedCaseClass.replace(/^\/\*/, "").replace(/\*\/$/, "");
+  var className = getClassName(minimalizedCaseClass);
+  var propertiesStr = splitProperty(removedComment);
+  var properties = parsepropertieString(propertiesStr);
   var result = AddOptionalProperty(properties);
   var processingObj = removeStringOfOptional(result);
   var replacedSeqToArray = replaceSeqToArray(processingObj);
@@ -26,6 +26,7 @@ function parseCassClassToApiBlueprint() {
   outputTarget.value = result;
 }
 
+// API Blueprint形式にフォーマット化した文字列を返す。
 function writeResultCaseClass (className, adjustmentObj) {
 	var result = "";
 	result += "## " + className + "\n";
@@ -36,9 +37,9 @@ function writeResultCaseClass (className, adjustmentObj) {
 	return result;
 }
 
-function parsepropertiestring(propertiestr) {
+//１プロパティの塊となる文字列をプロパティ名・プロパティの方に分割する
+function parsepropertieString(propertiestr) {
 	return propertiestr.map(function(prop) {
-		// return prop.split(':');
 		var res = prop.split(':');
 		var next = {};
 		next["propertyName"] = res[0];
@@ -47,6 +48,7 @@ function parsepropertiestring(propertiestr) {
 	});
 }
 
+// ScalaではSeq()だが、API Blueprint では arrayなので変換を行う
 function replaceSeqToArray(propertieStr) {
 	return propertieStr.map(function(prop) {
 		var seqReg = /Seq/;
@@ -57,6 +59,7 @@ function replaceSeqToArray(propertieStr) {
 	});
 }
 
+// API Blueprint印字時に Optionの文字は不要なため、削除する
 function removeStringOfOptional(properties) {
 	return properties.map(function(prop) {
 		if(prop["optional"]) {
@@ -67,7 +70,7 @@ function removeStringOfOptional(properties) {
 	});
 }
 
-//
+//optionalであるならばプロパティの属性にoptionalの属性を付与する
 function AddOptionalProperty(properties) {
 	var res = properties.map(function(property, index) {
 		if(optionalCheck(property["classType"])) {
@@ -80,6 +83,7 @@ function AddOptionalProperty(properties) {
 	return res;
 }
 
+// typeがoptionalであるかをチェックする
 function optionalCheck(typeString) {
 	var optionalFirstMatch = /Option\[/;
 	if (typeString.match(optionalFirstMatch)) {
@@ -88,7 +92,7 @@ function optionalCheck(typeString) {
 	return false;
 }
 
-//
+//プロパティにあたる文字列を、それぞれ個別のプロパティに分割
 function splitProperty (minimalStr) {
 	var propertyMatchReg = /\(.+\)$/;
 	var propertyValueStr = minimalStr.match(propertyMatchReg)[0];
@@ -100,7 +104,7 @@ function splitProperty (minimalStr) {
 	});
 }
 
-// Case Classの名前
+// Case ClassのClass Nameを取得
 function getClassName(minimalStr) {
 	var CASECLASS = 'caseclass';
 	var classNameReg = /(?:caseclass).+?(?=\()/;
